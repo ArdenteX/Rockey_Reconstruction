@@ -3,6 +3,8 @@ import numpy as np
 import torch
 from sklearn.preprocessing import MinMaxScaler
 from Rock.Model.MDN import mdn, NLLLoss
+from tqdm import tqdm
+from Rock.Utils.Recorder import Recorder
 
 
 class mdnTraining:
@@ -42,18 +44,42 @@ class mdnTraining:
         return train_x, train_y, val_x, val_y, test_x, test_y, scaler
 
     def fit(self):
-        # load data
-        tra_x, tra_y, v_x, v_y, t_x, t_y, s = mdnTraining().load_data()
+        pass
+# load data
+tra_x, tra_y, v_x, v_y, t_x, t_y, s = mdnTraining().load_data()
 
-        # load model
-        model = mdn(tra_x.shape[1], tra_y.shape[1], 3, 256)
+# Parameters
+input_size = tra_x.shape[1]
+output_size = tra_y.shape[1]
+num_gaussian = 3
+hidden_size = 256
 
-        for name, parameters in model.named_parameters():
-            print(name, ':', parameters.size())
+# load model
+model = mdn(input_size, output_size, num_gaussian, hidden_size)
 
-        pi, mu, sigma = model(tra_x[:256])
+# Loss Function
+criterion = NLLLoss()
 
-        pi_anti_nor = s.inverse_transform(pi.detach().numpy())
+# Optimizer
+optimizer = torch.optim.Adam(model.parameters(), lr=0.1986)
+
+for name, parameters in model.named_parameters():
+    print(name, ':', parameters.size())
+
+pbar = tqdm(range(0, tra_x.shape[0], 256))
+
+model.train()
+train_loss = Recorder()
+val_loss = Recorder()
+for p in pbar:
+    mini_batch_x = tra_x[p:p + 256]
+    mini_batch_y = tra_y[p:p + 256]
+
+    pi, mu, sigma = model(mini_batch_x)
+
+    pi_anti_nor = s.inverse_transform(pi.detach().numpy())
+    mu_anti_nor = s.inverse_transform(mu.detach().numpy())
+    sigma_anti_nor = s.inverse_transform(sigma.detach().numpy())
 
 
 
