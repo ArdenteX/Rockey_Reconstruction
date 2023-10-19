@@ -65,5 +65,5 @@ class NLLLoss(nn.Module):
 
         loglik = torch.logsumexp(pi + normal_loglik, dim=-1)
 
-        return -loglik
+        return torch.mean(-loglik)
 
