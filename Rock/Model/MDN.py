@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch
+from torch.distributions import Categorical, Normal, MixtureSameFamily, MultivariateNormal
 import math
 
 
@@ -59,11 +60,16 @@ class NLLLoss(nn.Module):
         super(NLLLoss, self).__init__()
 
     def forward(self, pi, mu, sigma, y):
-        z_score = (torch.unsqueeze(y, dim=1) - mu) / sigma
+        # z_score = (torch.unsqueeze(y, dim=1) - mu) / sigma
+        #
+        # normal_loglik = (-0.5 * torch.einsum("bij, bij->bi", z_score, z_score)) - torch.sum(torch.log(sigma), dim=-1)
+        #
+        # loglik = torch.logsumexp(pi + normal_loglik, dim=-1)
 
-        normal_loglik = (-0.5 * torch.einsum("bij, bij->bi", z_score, z_score)) - torch.sum(torch.log(sigma), dim=-1)
+        mix = Categorical(logits=pi)
+        comp = MultivariateNormal(mu, covariance_matrix=torch.diag_embed(sigma))
+        mixture_model = MixtureSameFamily(mix, comp)
+        loss = -mixture_model.log_prob(y).mean()
 
-        loglik = torch.logsumexp(pi + normal_loglik, dim=-1)
-
-        return torch.mean(-loglik)
+        return torch.mean(loss)
 

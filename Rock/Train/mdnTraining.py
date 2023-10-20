@@ -11,6 +11,7 @@ from Rock.Utils.WarmUpLR import WarmUpLR
 
 
 # Develop in MAC: /Users/xuhongtao/pycharmprojects/resource/Gas_Giants_Core_Earth20W.xlsx
+# Develop in Windows: D:\\Resource\\Gas_Giants_Core_Earth20W.xlsx
 """
     数据处理穷举：
         1.数据归一化
@@ -20,7 +21,7 @@ from Rock.Utils.WarmUpLR import WarmUpLR
 
 
 class mdnTraining:
-    def __init__(self, file_path='D:\\Resource\\Gas_Giants_Core_Earth20W.xlsx', learning_rate=0.001984, batch_size=512, hidden_size=256, n_gaussian=3, is_gpu=True, epoch=150):
+    def __init__(self, file_path='/Users/xuhongtao/pycharmprojects/resource/Gas_Giants_Core_Earth20W.xlsx', learning_rate=0.001984, batch_size=512, hidden_size=256, n_gaussian=3, is_gpu=True, epoch=150):
         self.f_p = file_path
         self.lr = learning_rate
         self.b_s = batch_size
