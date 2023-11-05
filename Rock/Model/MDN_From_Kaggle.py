@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch
+import numpy as np
 from torch.distributions import Categorical, Normal, MixtureSameFamily, MultivariateNormal
 import math
 
@@ -131,6 +132,18 @@ class Sample(nn.Module):
         samples = torch.normal(mean=mu_selected, std=sigma_selected)
 
         return samples
+
+
+class RelativeError(nn.Module):
+    def __init__(self):
+        super(RelativeError, self).__init__()
+
+    def forward(self, y_ture, samples, eps=1e-6):
+        relative_error = np.divide((np.abs(samples - y_ture)), np.abs(y_ture + eps)).mean()
+
+        return relative_error
+
+
 
 
 

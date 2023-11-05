@@ -61,7 +61,7 @@ t_set = torch.utils.data.TensorDataset(train_x, train_y)
 train_loader = DataLoader(t_set, batch_size=256, shuffle=True, num_workers=8)
 len(train_loader.sampler)
 
-model = mdn(train_x.shape[1], train_y.shape[1], 3, 256)
+model = mdn_advance(train_x.shape[1], train_y.shape[1], 3, 256)
 pi, mu, sigma = model(train_x[:64])
 
 c = NLLLoss()
@@ -85,6 +85,14 @@ mu_selected = mu[torch.arange(mu.shape[0]), select_idx, :]
 sigma_selected = sigma[torch.arange(sigma.shape[0]), select_idx, :]
 
 samples = torch.normal(mean=mu_selected, std=sigma_selected)
+samples = samples.detach().numpy()
+y_ture = y_ture.detach().numpy()
+
+relative_error = torch.div((torch.abs(samples - y_ture)), torch.abs(y_ture)).mean()
+
+relative_error_1 = np.divide((np.abs(samples - y_ture)), np.abs(y_ture)).mean()
+type(relative_error.item())
+
 
 # samples = np.zeros((len_y, 1))
 # to_choose_from = np.arange(n_mix)
