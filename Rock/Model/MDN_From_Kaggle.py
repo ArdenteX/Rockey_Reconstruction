@@ -1,8 +1,7 @@
 import torch.nn as nn
 import torch
 import numpy as np
-from torch.distributions import Categorical, Normal, MixtureSameFamily, MultivariateNormal
-import math
+from torch.distributions import Categorical, Normal
 
 
 class mdn(nn.Module):
@@ -14,19 +13,27 @@ class mdn(nn.Module):
         self.n_h = num_hidden
 
         self.root_layer = nn.Sequential(
-            nn.BatchNorm1d(self.i_s),
+            # nn.BatchNorm1d(self.i_s),
             nn.Linear(self.i_s, self.n_h),
             nn.SiLU(),
-            nn.Dropout(),
+            # nn.Dropout(),
             nn.Linear(self.n_h, self.n_h),
             nn.SiLU(),
-            nn.Dropout(),
+            # nn.Dropout(),
             nn.Linear(self.n_h, self.n_h),
             nn.SiLU(),
-            nn.Dropout(),
-            nn.Linear(self.n_h, self.n_h),
-            nn.SiLU(),
-            nn.BatchNorm1d(self.n_h),
+            # nn.Dropout(),
+            # nn.Linear(self.n_h, self.n_h),
+            # nn.SiLU(),
+            # nn.Dropout(),
+            # nn.Linear(self.n_h, self.n_h),
+            # nn.SiLU(),
+            # nn.Dropout(),
+            # nn.Linear(self.n_h, self.n_h),
+            # nn.SiLU(),
+            # nn.Dropout(),
+
+            # nn.BatchNorm1d(self.n_h),
         ).double()
 
         self.pi = nn.Sequential(
@@ -35,44 +42,39 @@ class mdn(nn.Module):
             nn.Linear(self.n_h, self.n_g)
         ).double()
 
-        self.normal_layer = nn.Sequential(
+        self.mu = nn.Sequential(
             nn.Linear(self.n_h, self.n_h),
             nn.SiLU(),
-            nn.Linear(self.n_h, 2 * (self.o_s * self.n_g))
+            nn.Linear(self.n_h, self.o_s * self.n_g)
         ).double()
 
-        # Test the performance after the origin
-        # self.mu = nn.Sequential(
-        #     nn.Linear(self.i_s, self.n_h),
-        #     nn.ReLU(),
-        #     nn.Linear(self.n_h, self.n_h),
-        #     nn.ReLU(),
-        #     nn.Linear(self.n_h, self.o_s * self.n_g)
-        # )
-        #
-        # self.sigma = nn.Sequential(
-        #     nn.Linear(self.i_s, self.n_h),
-        #     nn.ReLU(),
-        #     nn.Linear(self.n_h, self.n_h),
-        #     nn.ReLU(),
-        #     nn.Linear(self.n_h, self.o_s * self.n_g)
-        # )
+        self.sigma = nn.Sequential(
+            nn.Linear(self.n_h, self.n_h),
+            nn.ELU(),
+            nn.Linear(self.n_h, self.o_s * self.n_g)
+        ).double()
 
     def forward(self, x, eps=1e-6):
         parameters = self.root_layer(x).double()
 
         pi = torch.log_softmax(self.pi(parameters), dim=-1)
 
-        mu_sigma = self.normal_layer(parameters)
-        mu = mu_sigma[..., :self.o_s * self.n_g]
+        mu = self.mu(parameters)
 
-        sigma = mu_sigma[..., self.o_s * self.n_g:]
+        sigma = self.sigma(parameters)
         sigma = torch.exp(sigma + eps)
 
         return pi, mu.reshape(-1, self.n_g, self.o_s), sigma.reshape(-1, self.n_g, self.o_s)
 
 
 class NLLLoss(nn.Module):
+    """
+        Implementation of NLLLoss using probability density function
+
+        Using probability density function to calculate the NLLLoss will more suitable for regression task, it will not
+        break the straight relationship between loss function and weight of model. Besides, the implementation method of
+        firstly sampling than calculate the loss function will increase the uncertainly and break the straight relationship.
+    """
     def __init__(self):
         super(NLLLoss, self).__init__()
 
@@ -83,55 +85,38 @@ class NLLLoss(nn.Module):
 
         loglik = -torch.logsumexp(pi + normal_loglik, dim=-1)
 
-        # Construct distribution model
-        # mix = Categorical(logits=pi)
-        # comp = MultivariateNormal(mu, covariance_matrix=torch.diag_embed(sigma))
-        #
-        # # Mix
-        # mixture_model = MixtureSameFamily(mix, comp)
-        #
-        # # Calculate
-        # loss = -mixture_model.log_prob(y).mean()
-
         return loglik.mean()
 
 
-class R2_Evaluation(nn.Module):
+class Mixture(nn.Module):
     def __init__(self):
-        super(R2_Evaluation, self).__init__()
+        super(Mixture, self).__init__()
 
-    def forward(self, y_ture, y_pred):
-        """
-            R-square Calculating
-            Formular:
-                1 - (SSR(Sum of Squares of Residuals)/SST(Sum of Squares Total))
-                SSR = Sum(Pow(y_ture - y_pred), 2)
-                SST = Sum(Pow(y_ture - mean(y_ture), 2))
-        """
-        # SSR
-        ssr = torch.sum(torch.pow((y_ture - y_pred), 2), dim=-1)
-        # SST
-        sst = torch.sum(torch.pow((y_ture - torch.mean(y_ture)), 2))
-        # R2
-        r2 = 1 - (ssr / sst)
-
-        return r2.mean()
-
-
-class Sample(nn.Module):
-    def __init__(self):
-        super(Sample, self).__init__()
 
     def forward(self, pi, mu, sigma):
-        select_idx = torch.multinomial(torch.exp(pi), num_samples=1, replacement=True).squeeze()
+        cat = Categorical(logits=pi)
+
+        select_idx = cat.sample()
 
         # Advance Indexing
         mu_selected = mu[torch.arange(mu.shape[0]), select_idx, :]
         sigma_selected = sigma[torch.arange(sigma.shape[0]), select_idx, :]
 
-        samples = torch.normal(mean=mu_selected, std=sigma_selected)
+        pdf = Normal(loc=mu_selected, scale=sigma_selected)
 
-        return samples
+        return pdf
+
+
+class NLLLoss_Version_2(nn.Module):
+    def __init__(self):
+        super(NLLLoss_Version_2, self).__init__()
+
+    def forward(self, pdf, y_true):
+        log_prob = pdf.log_prob(y_true)
+        log_prob = log_prob.negative()
+        log_prob = log_prob.mean()
+
+        return log_prob
 
 
 class RelativeError(nn.Module):
@@ -142,8 +127,6 @@ class RelativeError(nn.Module):
         relative_error = np.divide((np.abs(samples - y_ture)), np.abs(y_ture + eps)).mean()
 
         return relative_error
-
-
 
 
 
