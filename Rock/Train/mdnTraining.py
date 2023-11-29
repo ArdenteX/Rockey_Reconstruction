@@ -204,9 +204,6 @@ class mdnTraining:
         # Relative Error
         r_e = RelativeError()
 
-        # R2
-        # r2 = R2_Evaluation()
-
         # Optimizer
         optimizer = torch.optim.Adam(split_weights(model), lr=self.lr, weight_decay=self.w_d)
         # optimizer = torch.optim.SGD(split_weights(model), lr=self.lr, weight_decay=0.1, momentum=0.9, nesterov=True)

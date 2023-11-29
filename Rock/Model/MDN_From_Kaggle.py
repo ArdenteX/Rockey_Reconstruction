@@ -21,19 +21,7 @@ class mdn(nn.Module):
             nn.SiLU(),
             # nn.Dropout(),
             nn.Linear(self.n_h, self.n_h),
-            nn.SiLU(),
-            # nn.Dropout(),
-            # nn.Linear(self.n_h, self.n_h),
-            # nn.SiLU(),
-            # nn.Dropout(),
-            # nn.Linear(self.n_h, self.n_h),
-            # nn.SiLU(),
-            # nn.Dropout(),
-            # nn.Linear(self.n_h, self.n_h),
-            # nn.SiLU(),
-            # nn.Dropout(),
-
-            # nn.BatchNorm1d(self.n_h),
+            nn.SiLU()
         ).double()
 
         self.pi = nn.Sequential(
@@ -93,7 +81,7 @@ class Mixture(nn.Module):
         super(Mixture, self).__init__()
 
 
-    def forward(self, pi, mu, sigma):
+    def forward(self, pi, mu, sigma, sample_for='train'):
         cat = Categorical(logits=pi)
 
         select_idx = cat.sample()
@@ -104,7 +92,11 @@ class Mixture(nn.Module):
 
         pdf = Normal(loc=mu_selected, scale=sigma_selected)
 
-        return pdf
+        if sample_for == 'train':
+            return pdf
+
+        else:
+            return pdf, select_idx, mu_selected, sigma_selected
 
 
 class NLLLoss_Version_2(nn.Module):
