@@ -273,3 +273,72 @@ plt.xlabel('X')
 plt.ylabel('Y')
 
 plt.show()
+
+input_parameters = [
+    'Mass',
+    'Radius',
+    'Fe_(Mg+Si)',
+    'k2',
+]
+
+
+output_parameters = [
+    'WRF',
+    'MRF',
+    'CRF',
+    'CMF',
+    'PRS_CMB',
+    'TEP_CMB',
+]
+
+input_size = 4
+output_size = 6
+n_gaussian = 10
+hidden_size = 256
+
+mixture = Mixture()
+
+model = mdn(input_size, output_size, n_gaussian, hidden_size)
+init_weights(model)
+model = nn.DataParallel(model)
+model.to("cuda")
+model.load_state_dict(torch.load("D:\\Resource\\MDN\\model_best_mdn_0.9918_-30_0.0004.pth"))
+
+test_x = np.load("D:\\Resource\\MDN\\TestDataMRCk2\\test_x.npy")
+test_y = np.load("D:\\Resource\\MDN\\TestDataMRCk2\\test_y.npy")
+y_label = np.arange(0, 1, 0.001).reshape(-1, 1)
+
+model.eval()
+# Predict
+pi, mu, sigma = model(torch.from_numpy(test_x))
+
+# Construct Distribution Function
+normal, pi_idx, mu_selected, sigma_selected = mixture(pi, mu, sigma, 'test')
+samples = normal.sample()
+sample = samples.cpu().numpy()
+
+
+fig = plt.figure(figsize=(10, 10))
+"""
+    Plot Scatter
+"""
+for i in range(len(output_parameters)):
+    x = sample[:, i]
+    y = test_y[:, i]
+
+    y_max_2 = max(y)
+    y_min_2 = min(y)
+
+    ax = fig.add_subplot(3, 3, i + 1)
+
+    ax.scatter(x, y, alpha=0.7, s=10)
+
+    ax.plot([y_min_2, y_max_2], [y_min_2, y_max_2], c='cornflowerblue', ls='--')
+    plt.axis('equal')
+    ax.set_xlim(y_min_2, y_max_2)
+    ax.set_ylim(y_min_2, y_max_2)
+    ax.set_title(output_parameters[i])
+
+plt.show()
+
+fig.savefig("D:\\PythonProject\\RebuildProject\\Rock\\imgs\\MRCk2_MDN20231129_Scatter.png")

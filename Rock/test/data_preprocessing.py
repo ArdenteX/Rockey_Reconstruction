@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import torch
 import numpy as np
@@ -110,6 +112,7 @@ train_loader = DataLoader(t_set, batch_size=256, shuffle=True, num_workers=8)
 model = mdn_advance(train_x.shape[1], train_y.shape[1], 3, 256)
 pi, mu, sigma = model(train_x[:64])
 y_ture = train_y[:64]
+optimizer = eval("torch.optim.{}({}, lr={}, weight_decay={})".format('Adam', 'model.parameters()', '0.001', '0.01'))
 
 sigma_exp = torch.exp(sigma)
 
@@ -221,46 +224,98 @@ r2_sk
 test_train = mdnTraining(learning_rate=0.001984, batch_size=512, hidden_size=512, n_gaussian=20, is_gpu=True, epoch=200, if_shuffle=True, is_normal=True)
 
 
+file_path = 'D:\\Resource\\MRCK_2\\'
+nowater_data_frames = []
 
-"""
-    negative-likelihood loss
-    Formular:
-        Mean(Sum(Log(pi) + Pow((y_ture-mu), 2) / 2 * sigma ** 2 + 1/2 * log(2 * pi * sigma ** 2)))
-"""
-# nllloss = torch.mean(torch.sum(pi + torch.pow((torch.unsqueeze(y_ture, dim=1) - mu), 2) / 2 * torch.pow(sigma, 2) + 1/2 * torch.log(2 * pi * torch.pow(sigma, 2))))
-# a = torch.pow((torch.unsqueeze(y_ture, dim=1) - mu), 2)
-# b = 2 * torch.pow(sigma, 2)
-# a / b
-# c = 1/2 * torch.log(2 * torch.unsqueeze(pi, dim=2) * torch.pow(sigma, 2))
-# d = torch.unsqueeze(torch.exp(pi), dim=2)
-# mix = Categorical(logits=pi)
+file_nowater = os.listdir(file_path + 'nowater')
+for f in file_nowater:
+    tmp = pd.read_table(file_path + '\\' + 'nowater\\' + f, delimiter="\s+", header=None)
+    nowater_data_frames.append(tmp)
 
-# coll = [MultivariateNormal(loc=loc, scale_tril=scale) for loc, scale in zip(mu, sigma)]
+df_nowater = pd.concat(nowater_data_frames)
 
-# comp = Normal(mu, sigma)
-# batch_size = pi.shape[0]
-# n_gaussian = pi.shape[1]
-# out_put_size = mu.shape[2]
 
-# likelihood = coll.log_prob(train_y[:64].unsqueeze(1).expand(batch_size, n_gaussian, out_put_size))
-# loss = cat.log_prob()
-#
-# a = cat.log_prob(torch.zeros_like(train_y[:64]))
+file_water = os.listdir(file_path + 'water')
+water_data_frames = []
+for f in file_water:
+    tmp = pd.read_table(file_path + '\\' + 'water\\' + f, delimiter="\s+", header=None)
+    water_data_frames.append(tmp)
 
-# test_comp = MultivariateNormal(mu, covariance_matrix=torch.diag_embed(sigma))
-# m_d = MixtureSameFamily(mix, test_comp)
-# loss = -m_d.log_prob(train_y[:64]).mean()
+df_water = pd.concat(water_data_frames)
 
-# tra_test = mdnTraining()
-# a, b, s_x, s_y = tra_test.load_data()
-# len(a.sampler)
-# len(b.sampler)
-#
-# data['M_total (M_E)'] = data['Mcore (M_J/10^3)'] + data['Menv (M_E)']
-#
-# test_a = data.iloc[:, [0, 1, 5]]
-# test_b = data.iloc[:, [6, 8, 9, 11]]
-#
-# d = data.sample(frac=0.8).reset_index(drop=True)
-# e = data.drop(d.index).sample(frac=0.5).reset_index(drop=True)
+
+# combine merged nowater and water data
+df_all = pd.concat([df_nowater, df_water])
+
+# rename columns
+df_all.columns = ['Mass', 'Radius', 'WMF',
+                  'CMF', 'WRF', 'CRF', 'PRS_WMB',
+                  'TEP_WMB', 'PRS_CMB', 'TEP_CMB', 'PRS_CEN', 'TEP_CEN',
+                  'k2', 'FeMg_mantle', 'SiMg_mantle', 'FeO_mantle']
+
+# reset index
+df_all = df_all.reset_index(drop=True)
+
+df_all = df_all.astype(float)
+
+CaMg = 0.06
+AlMg = 0.08
+wt_frac_S_core = 0.0695     # by mass
+
+mFe = 55.845
+mMg = 24.306
+mSi = 28.0867
+mO = 15.9994
+mS = 32.0650
+mCa = 40.078
+mAl = 26.981
+
+# you can check the FeO_mantle results from the mantle molar ratios FeMg, SiMg, CaMg, AlMg
+# The results should be same as the column FeO_mantle
+reduced_mantle_mass = df_all['FeMg_mantle'] * (mFe+mO) + df_all['SiMg_mantle'] * (mSi+2.0*mO) + CaMg * (mCa+mO) + AlMg * (mAl+1.5*mO) + (mMg+mO)
+FeO_mantle_cal = df_all['FeMg_mantle'] * (mFe+mO) / reduced_mantle_mass
+
+# number of Fe atoms in the core
+nFe_core = df_all['CMF'] * (1.0 - wt_frac_S_core) / mFe
+
+# number of Fe atoms in the mantle
+nFe_mantle = (1.0 - df_all['CMF'] - df_all['WMF']) * df_all['FeO_mantle'] / (mFe + mO)
+
+# number of Mg atoms in the mantle
+nMg_mantle = nFe_mantle / df_all['FeMg_mantle']
+
+# bulk FeMg
+FeMg = (nFe_core + nFe_mantle) / nMg_mantle
+df_all['FeMg'] = FeMg
+
+# bulk SiMg: there is no Si & Mg in the core
+df_all['SiMg'] = df_all['SiMg_mantle']
+
+df_all = df_all[df_all['FeMg']<=40]
+
+df_all["Fe_(Mg+Si)"] = df_all["FeMg"]/(df_all["SiMg"] + 1)
+
+df_all["MRF"] = 1 - df_all["WRF"] - df_all["CRF"]
+
+input_parameters = [
+    'Mass',
+    'Radius',
+    'Fe_(Mg+Si)',
+    'k2',
+]
+
+
+output_parameters = [
+    'WRF',
+    'MRF',
+    'CRF',
+    'CMF',
+    'PRS_CMB',
+    'TEP_CMB',
+]
+
+X = df_all[input_parameters]
+x = df_all.loc[:, input_parameters]
+
+y = df_all.loc[:, output_parameters]
 
