@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
-from Rock.Model.MDN_From_Kaggle import mdn, Mixture
+from Rock.Model.MDN_by_Pytorch import mdn, Mixture
 from Rock.Utils.View import init_weights
 from sklearn.metrics import r2_score
 import math

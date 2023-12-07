@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import r2_score
-from Rock.Model.MDN_From_Kaggle import mdn as mdn_advance, RelativeError, Mixture, NLLLoss
+from Rock.Model.MDN_by_Pytorch import mdn as mdn_advance, RelativeError, Mixture, NLLLoss
 from tqdm import tqdm
 from Rock.Utils.Recorder import Recorder
 from Rock.Utils.WarmUpLR import WarmUpLR

@@ -7,7 +7,7 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import TensorDataset, DataLoader
 from Rock.Model.MDN import mdn, NLLLoss
 from sklearn.metrics import r2_score
-from Rock.Model.MDN_From_Kaggle import mdn as mdn_advance
+from Rock.Model.MDN_by_Pytorch import mdn as mdn_advance
 from Rock.Train.TrainLoopOrigin import mdnTraining
 import seaborn as sns
 import matplotlib.pyplot as plt
