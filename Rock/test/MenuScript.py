@@ -1,5 +1,4 @@
 import os
-
 import pandas as pd
 import torch
 import numpy as np
@@ -9,7 +8,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from Rock.Model.MDN import mdn, NLLLoss
 from sklearn.metrics import r2_score
 from Rock.Model.MDN_From_Kaggle import mdn as mdn_advance
-from Rock.Train.mdnTraining import mdnTraining
+from Rock.Train.TrainLoopOrigin import mdnTraining
 import seaborn as sns
 import matplotlib.pyplot as plt
 import math
