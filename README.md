@@ -58,16 +58,16 @@ robust to noise than the tradition activate function
 - Speed(Epoch): Because the final performance of Without Dropout MDN is better than the other one, recording the epoch when each model's R2 is 0.9929 can compare the training speed between MDN of Without Dropout and Dropout
 
 Negative Likelihood Loss Function (Dropout)
-![img](.\\Rock\\imgs\\MDN_MRCk2_loss_20230524.png)
+![img](Rock/Imgs/MDN_MRCk2_loss_20230524.png)
 
 Negative Likelihood Loss Function (Without Dropout)
-![img](.\\Rock\\imgs\\MRCk2_MDN20231129_TrainValLoss.png)
+![img](Rock/Imgs/MRCk2_MDN20231129_TrainValLoss.png)
 
 Probability density distribution heat map(Dropout)
-![img](.\\Rock\\imgs\\img_2.png)
+![img](Rock/Imgs/img_2.png)
 
 Probability density distribution heat map(Dropout)
-![img](.\\Rock\\imgs\\prediction_MRCk2_20231201.png)
+![img](Rock/Imgs/prediction_MRCk2_20231201.png)
 
    
 
