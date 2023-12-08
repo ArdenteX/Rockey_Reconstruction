@@ -1,7 +1,7 @@
 # DeepExo: Implementation of MDN by Pytorch
 
 Mixture density network using pytorch. Compared with the other implementation of MDN, this project using L2 and a couple of technique
-instead of drop out layer to prevent the over fitting, this make the network more stably during training. 
+instead of drop out layer to prevent the over fitting, this make the network more stably during training. This project is based on my tutor's [Rocky_Exoplanets_v2](https://github.com/VectorZhao/Rocky_Exoplanets_v2)
 
 ## Structure
 1. This project using Elu in sigma layer for deal with the gradient disappear or explosion, at the same time, it is more
