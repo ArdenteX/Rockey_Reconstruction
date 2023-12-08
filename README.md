@@ -53,13 +53,22 @@ robust to noise than the tradition activate function
 |:----------------|:------------|:-------------------|:-----------|:--------------|:-------------|:-----------|:-----------|:-----------------|
 | Without Dropout | 256         | 10                 | 1024       | 0.0001984     | **-33.7150** | **0.9950** | **0.0002** | **79**           |
 | Dropout         | 512         | 20                 | 512        | 0.0001        | -25.1895     | 0.9929     | 0.0003     | 120              |
-Speed(Epoch): Because the final performance of Without Dropout MDN is better than the other one, recording the epoch when each model's R2 is 0.9929 can compare the training speed between MDN of Without Dropout and Dropout
+
+
+- Speed(Epoch): Because the final performance of Without Dropout MDN is better than the other one, recording the epoch when each model's R2 is 0.9929 can compare the training speed between MDN of Without Dropout and Dropout
 
 Negative Likelihood Loss Function (Dropout)
-![img](Rock\\imgs\\MDN_MRCk2_loss_20230524.png)
+![img](.\\Rock\\imgs\\MDN_MRCk2_loss_20230524.png)
 
 Negative Likelihood Loss Function (Without Dropout)
-![img](Rock\\imgs\\MRCk2_MDN20231129_TrainValLoss.png)
+![img](.\\Rock\\imgs\\MRCk2_MDN20231129_TrainValLoss.png)
+
+Probability density distribution heat map(Dropout)
+![img](.\\Rock\\imgs\\img_2.png)
+
+Probability density distribution heat map(Dropout)
+![img](.\\Rock\\imgs\\prediction_MRCk2_20231201.png)
+
    
 
 ## Example
