@@ -66,7 +66,7 @@ Negative Likelihood Loss Function (Without Dropout)
 Probability density distribution heat map(Dropout)
 ![img](Rock/Imgs/img_2.png)
 
-Probability density distribution heat map(Dropout)
+Probability density distribution heat map(Without Dropout)
 ![img](Rock/Imgs/prediction_MRCk2_20231201.png)
 
    
