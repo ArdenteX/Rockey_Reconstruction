@@ -75,8 +75,9 @@ Probability density distribution heat map(Without Dropout)
 This project's train part is based on the module designed by myself [tortreinador](https://github.com/ArdenteX/tortreinador).
 
 ```python
-from TorchLoop import Train
-from Rock.Model.MDN_by_Pytorch import mdn as mdn_advance, Mixture, NLLLoss
+from tortreinador import train
+from tortreinador.models.MDN import mdn, Mixture, NLLLoss
+import torch
 
 input_parameters = [
     'Mass',
@@ -97,18 +98,27 @@ output_parameters = [
 
 # df_all is your dataset
 
-loop = Train.TorchLoop(batch_size=1024, learning_rate=0.0001984, epoch=150, weight_decay=0.001)
-model = mdn_advance(len(input_parameters), len(output_parameters), 10, 256)
+trainer = train.TorchTrainer()
+# Model
+model = mdn(len(input_parameters), len(output_parameters), 10, 256)
+
+# Loss
 criterion = NLLLoss()
 pdf = Mixture()
 
+# Optimizer
+optim = torch.optim.Adam(trainer.xavier_init(model), lr=0.0001984, weight_decay=0.001)
+
 # You can specify the input/output parameter and your dataset(Only support Dataframe currently) 
-t_loader, v_loader, test_x, test_y, s_x, s_y = loop.load_data(df_all, input_parameters, output_parameters, train_size=0.9, val_size=0.05, test_size= 0.05)
+t_loader, v_loader, test_x, test_y, s_x, s_y = trainer.load_data(data=df_all, input_parameters=input_parameters,
+                                                                 output_parameters=output_parameters,
+                                                                 if_normal=True, if_shuffle=True)
 
 # The default optimizer is Adam
-t_l, v_l, val_r2, train_r2, mse = loop.fit_for_MDN(t_loader, v_loader, criterion, model=model, mixture=pdf, warmup_epoch=5)
+t_l, v_l, val_r2, train_r2, mse = trainer.fit_for_MDN(t_loader, v_loader, criterion, model=model, mixture=pdf,
+                                                      model_save_path='D:\\Resource\\MDN\\', optim=optim, best_r2=0.5)
 ```
 
 ## Usage
 
-Please visit [tortreinador](https://github.com/ArdenteX/tortreinador), I will upload it to pypi and publish a detailed user manual soon.
+Please visit [tortreinador](https://github.com/ArdenteX/tortreinador)
