@@ -72,7 +72,7 @@ Probability density distribution heat map(Without Dropout)
    
 
 ## Example
-This project's train part is based on the module designed by myself [TouchLoop](https://github.com/ArdenteX/TorchLoop).
+This project's train part is based on the module designed by myself [zephram](https://github.com/ArdenteX/zephram).
 
 ```python
 from TorchLoop import Train
@@ -111,4 +111,4 @@ t_l, v_l, val_r2, train_r2, mse = loop.fit_for_MDN(t_loader, v_loader, criterion
 
 ## Usage
 
-Please visit [TouchLoop](https://github.com/ArdenteX/TorchLoop), I will upload it to pypi and publish a detailed user manual soon.
+Please visit [zephram](https://github.com/ArdenteX/zephram), I will upload it to pypi and publish a detailed user manual soon.
