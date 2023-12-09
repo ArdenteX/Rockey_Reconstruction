@@ -72,7 +72,7 @@ Probability density distribution heat map(Without Dropout)
    
 
 ## Example
-This project's train part is based on the module designed by myself [tortreinador](https://github.com/ArdenteX/tortreinador).
+This project's train part is based on the module [tortreinador](https://github.com/ArdenteX/tortreinador).
 
 ```python
 from tortreinador import train
