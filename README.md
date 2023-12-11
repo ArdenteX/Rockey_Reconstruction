@@ -1,4 +1,12 @@
-# DeepExo: Implementation of MDN by Pytorch
+<a name="readme-top"></a>
+
+<div align="center">
+
+<img height="120" src="https://github.com/VectorZhao/deepexo/blob/master/docs/icon-512%402x.png">
+
+
+
+# DeepExo
 
 Mixture density network using pytorch. Compared with the other implementation of MDN, this project using L2 and a couple of technique
 instead of drop out layer to prevent the over fitting, this make the network more stably during training. This project is based on my tutor's [Rocky_Exoplanets_v2](https://github.com/VectorZhao/Rocky_Exoplanets_v2)
