@@ -3,6 +3,7 @@
 <div align="center">
 
 <img height="120" src="https://github.com/VectorZhao/deepexo/blob/master/docs/icon-512%402x.png">
+<img height="120" src="https://github.com/VectorZhao/deepexo/blob/master/docs/icon-512%402x-colorful.png">
 
 
 
