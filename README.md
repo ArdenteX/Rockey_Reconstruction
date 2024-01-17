@@ -1,7 +1,35 @@
-# DeepExo: Implementation of MDN by Pytorch
+<a name="readme-top"></a>
 
+<div align="center">
+
+<img height="60" src="https://github.com/VectorZhao/deepexo/blob/master/docs/icon-512%402x.png">
+<img height="60" src="https://github.com/VectorZhao/deepexo/blob/master/docs/icon-512%402x-colorful.png">
+
+<h1 align="center">DeepExo</h1>
+
+English / [简体中文](./README_CN.md)
+
+<b> One-Click to unlock the mysteries of exoplanet interiors with deepexo </b>, 
+
+an integrated machine learning platform for planetary science.
+
+
+</div>
+
+## 👋🏻 Overview
 Mixture density network using pytorch. Compared with the other implementation of MDN, this project using L2 and a couple of technique
-instead of drop out layer to prevent the over fitting, this make the network more stably during training. 
+instead of drop out layer to prevent the over fitting, this make the network more stably during training. This project is based on my tutor's [Rocky_Exoplanets_v2](https://github.com/VectorZhao/Rocky_Exoplanets_v2)
+## ✨ Features
+- 🌐 Unified Project Collection: We have meticulously integrated previously published machine learning models designed for predicting the internal structures of [gas giants](https://github.com/VectorZhao/ExtrasolarGasGiants) and [rocky exoplanets](https://github.com/VectorZhao/Rocky_Exoplanets_v2).
+- 🔧 Cutting-edge Codebase: Our project has undergone a complete transformation with a redesigned code architecture implemented in PyTorch. This revamp includes the reimagining of essential components like the MDN layer, resulting in a more efficient and scalable framework.
+- 📈 Superior Predictive Performance: Leveraging the power of our revamped codebase and retraining the MDN model with existing data, we've achieved substantial enhancements in predictive capabilities. Our model consistently demonstrates superior performance compared to its predecessors, delivering more accurate and reliable results for planetary science research.
+- 🧩 Encapsulated Functions: To facilitate the scientific community, we've developed user-friendly encapsulated functions. These functions empower researchers to seamlessly initiate and train their own machine learning models for investigating the interiors of exoplanets. This abstraction simplifies the complexity of model development, accelerating scientific exploration.
+
+## 🚀 Get Started
+
+## Usage
+
+Please visit [tortreinador](https://github.com/ArdenteX/tortreinador)
 
 ## Structure
 1. This project using Elu in sigma layer for deal with the gradient disappear or explosion, at the same time, it is more
@@ -58,25 +86,26 @@ robust to noise than the tradition activate function
 - Speed(Epoch): Because the final performance of Without Dropout MDN is better than the other one, recording the epoch when each model's R2 is 0.9929 can compare the training speed between MDN of Without Dropout and Dropout
 
 Negative Likelihood Loss Function (Dropout)
-![img](.\\Rock\\imgs\\MDN_MRCk2_loss_20230524.png)
+![img](Rock/Imgs/MDN_MRCk2_loss_20230524.png)
 
 Negative Likelihood Loss Function (Without Dropout)
-![img](.\\Rock\\imgs\\MRCk2_MDN20231129_TrainValLoss.png)
+![img](Rock/Imgs/MRCk2_MDN20231129_TrainValLoss.png)
 
 Probability density distribution heat map(Dropout)
-![img](.\\Rock\\imgs\\img_2.png)
+![img](Rock/Imgs/img_2.png)
 
-Probability density distribution heat map(Dropout)
-![img](.\\Rock\\imgs\\prediction_MRCk2_20231201.png)
+Probability density distribution heat map(Without Dropout)
+![img](Rock/Imgs/prediction_MRCk2_20231201.png)
 
    
 
 ## Example
-This project's train part is based on the module designed by myself [TouchLoop](https://github.com/ArdenteX/TorchLoop).
+This project's train part is based on the module [tortreinador](https://github.com/ArdenteX/tortreinador).
 
 ```python
-from TorchLoop import Train
-from Rock.Model.MDN_by_Pytorch import mdn as mdn_advance, Mixture, NLLLoss
+from tortreinador import train
+from tortreinador.models.MDN import mdn, Mixture, NLLLoss
+import torch
 
 input_parameters = [
     'Mass',
@@ -97,18 +126,33 @@ output_parameters = [
 
 # df_all is your dataset
 
-loop = Train.TorchLoop(batch_size=1024, learning_rate=0.0001984, epoch=150, weight_decay=0.001)
-model = mdn_advance(len(input_parameters), len(output_parameters), 10, 256)
+trainer = train.TorchTrainer()
+# Model
+model = mdn(len(input_parameters), len(output_parameters), 10, 256)
+
+# Loss
 criterion = NLLLoss()
 pdf = Mixture()
 
+# Optimizer
+optim = torch.optim.Adam(trainer.xavier_init(model), lr=0.0001984, weight_decay=0.001)
+
 # You can specify the input/output parameter and your dataset(Only support Dataframe currently) 
-t_loader, v_loader, test_x, test_y, s_x, s_y = loop.load_data(df_all, input_parameters, output_parameters, train_size=0.9, val_size=0.05, test_size= 0.05)
+t_loader, v_loader, test_x, test_y, s_x, s_y = trainer.load_data(data=df_all, input_parameters=input_parameters,
+                                                                 output_parameters=output_parameters,
+                                                                 if_normal=True, if_shuffle=True)
 
 # The default optimizer is Adam
-t_l, v_l, val_r2, train_r2, mse = loop.fit_for_MDN(t_loader, v_loader, criterion, model=model, mixture=pdf, warmup_epoch=5)
+t_l, v_l, val_r2, train_r2, mse = trainer.fit_for_MDN(
+    t_loader, v_loader, criterion, model=model, mixture=pdf,
+    model_save_path='D:\\Resource\\MDN\\', optim=optim, best_r2=0.5)
 ```
 
-## Usage
+## 📚 References
+- [Machine learning techniques in studies of the interior structure of rocky exoplanets](https://www.aanda.org/articles/aa/abs/2021/06/aa40375-21/aa40375-21.html)
+- [Understanding the interior structure of gaseous giant exoplanets with machine learning techniques](https://www.aanda.org/articles/aa/abs/2022/02/aa42874-21/aa42874-21.html)
+- [Machine-learning Inferences of the Interior Structure of Rocky Exoplanets from Bulk Observational Constraints](https://iopscience.iop.org/article/10.3847/1538-4365/acf31a)
+                                                      
 
-Please visit [TouchLoop](https://github.com/ArdenteX/TorchLoop), I will upload it to pypi and publish a detailed user manual soon.
+
+
