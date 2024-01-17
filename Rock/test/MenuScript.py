@@ -2,16 +2,19 @@ import os
 import pandas as pd
 import torch
 import numpy as np
+from sklearn.model_selection import train_test_split
 from torch.distributions import Categorical, Normal, MixtureSameFamily, MultivariateNormal, Independent
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import TensorDataset, DataLoader
 from Rock.Model.MDN import mdn, NLLLoss
 from sklearn.metrics import r2_score
-from Rock.Model.MDN_by_Pytorch import mdn as mdn_advance
+from Rock.Model.MDN_by_Pytorch import mdn as mdn_advance, Mixture
 from Rock.Train.TrainLoopOrigin import mdnTraining
 import seaborn as sns
 import matplotlib.pyplot as plt
 import math
+from tortreinador import train
+from tortreinador.models.MDN import mdn, Mixture, NLLLoss
 
 
 class GenerateData:
@@ -104,13 +107,74 @@ a = data_x.iloc[int(len(data) * 0.9):, :]
 # val_x = torch.from_numpy(scaler_x.fit_transform(val_set.iloc[:, [0, 1, 5]]).astype('float32'))
 # val_y = torch.from_numpy(scaler_y.fit_transform(val_set.iloc[:, [6, 8, 9, 11]]).astype('float32'))
 
+
+def test_optim(b: torch.nn.Module):
+    print("OK")
+
+
 t_set = torch.utils.data.TensorDataset(train_x, train_y)
 train_loader = DataLoader(t_set, batch_size=256, shuffle=True, num_workers=8)
 # len(train_loader.sampler)
 
-model = mdn_advance(train_x.shape[1], train_y.shape[1], 3, 256)
+model = mdn_advance(3, 4, 3, 256)
+model.to('cuda')
+train_x = train_x.to('cuda')
+
 pi, mu, sigma = model(train_x[:64])
 y_ture = train_y[:64]
+y_ture = y_ture.to('cuda')
+mix = Mixture()
+
+pdf = mix(pi, mu, sigma)
+
+y_pred = pdf.sample()
+
+file_path = 'D:\\Resource\\MRCK_2\\'
+nowater_data_frames = []
+
+file_nowater = os.listdir(file_path + 'nowater')
+for f in file_nowater:
+    tmp = pd.read_table(file_path + '\\' + 'nowater\\' + f, delimiter="\s+", header=None)
+    nowater_data_frames.append(tmp)
+
+df_nowater = pd.concat(nowater_data_frames)
+
+
+file_water = os.listdir(file_path + 'water')
+water_data_frames = []
+for f in file_water:
+    tmp = pd.read_table(file_path + '\\' + 'water\\' + f, delimiter="\s+", header=None)
+    water_data_frames.append(tmp)
+
+df_water = pd.concat(water_data_frames)
+
+# combine merged nowater and water data
+df_all = pd.concat([df_nowater, df_water])
+
+df_sample = df_all.sample(frac=0.1, replace=False)
+df_sample.to_csv("D:\\Study\\澳科大\\Final_2023\\Data Mining\\sample.csv", index=False, header=True)
+"""
+    r2 score implementation by pytorch
+"""
+a = np.random.rand(2, 3)
+b = np.random.rand(2, 3)
+
+a_t = torch.from_numpy(a).to('cuda')
+b_t = torch.from_numpy(b).to('cuda')
+
+torch.sum(((a_t - b_t) ** 2), dim=0, dtype=torch.float64)
+b_t.device == a_t.device
+ss_tot = torch.sum(((y_ture - torch.mean(y_ture, dim=0)) ** 2), dim=0, dtype=torch.float64)
+ss_res = torch.sum(((y_ture - y_pred) ** 2), dim=0, dtype=torch.float64)
+r2 = 1 - ss_res / ss_tot
+
+print("pytorch r2 score : {}".format(torch.mean(r2)))
+print("sklean r2 score : {}".format(r2_score(y_ture.cpu(), y_pred.cpu())))
+
+
+torch.mean(r2)
+# test_optim(torch.optim.Adam(model.parameters()))
+
 optimizer = eval("torch.optim.{}({}, lr={}, weight_decay={})".format('Adam', 'model.parameters()', '0.001', '0.01'))
 
 sigma_exp = torch.exp(sigma)
@@ -317,4 +381,75 @@ X = df_all[input_parameters]
 x = df_all.loc[:, input_parameters]
 
 y = df_all.loc[:, output_parameters]
+
+
+data = pd.read_excel('D:\\Resource\\Gas_Giants_Core_Earth20W.xlsx')
+data['M_total (M_E)'] = data['Mcore (M_J/10^3)'] + data['Menv (M_E)']
+
+input_parameters = [
+    'Mass (M_J)',
+    'Radius (R_E)',
+    'T_sur (K)',
+]
+
+output_parameters = [
+    'M_total (M_E)',
+    'T_int (K)',
+    'P_CEB (Mbar)',
+    'T_CEB (K)'
+]
+
+trainer = train.TorchTrainer()
+
+t_loader, v_loader, test_x, test_y, s_x, s_y = trainer.load_data(data=data, input_parameters=input_parameters, output_parameters=output_parameters,
+                           if_normal=True, if_shuffle=True)
+
+
+model = mdn(len(input_parameters), len(output_parameters), 10, 256)
+criterion = NLLLoss()
+pdf = Mixture()
+optim = torch.optim.Adam(model.parameters(), lr=0.0001984)
+
+
+t_l, v_l, val_r2, train_r2, mse = trainer.fit_for_MDN(t_loader, v_loader, criterion, model=model, mixture=pdf, model_save_path='D:\\Resource\\MDN\\', optim=optim, best_r2=0.5, xavier_init=False)
+
+
+from numpy.random import seed
+seed(123)
+
+a = np.array([1, 2, 3, 5, 6])
+
+X = data[input_parameters]
+
+y = data.loc[:, output_parameters]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
+X_train_1, X_test_1, y_train_1, y_test_1 = train_test_split(X, y, test_size=0.1)
+
+c = np.random.choice(a, 3)
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+# 使用交互式后端
+plt.ion()
+
+# 创建一个初始的空图表
+fig, ax = plt.subplots()
+line, = ax.plot([], [])  # 创建一个空的曲线
+
+# 更新图表的函数
+def update_plot(x, y):
+    line.set_xdata(x)
+    line.set_ydata(y)
+    ax.relim()
+    ax.autoscale_view()
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+
+# 模拟实时更新数据并绘制图表
+x = np.linspace(0, 10, 100)
+for i in range(100):
+    y = np.sin(x - i)  # 模拟新的数据
+    update_plot(x, y)  # 更新图表
+
 
