@@ -5,12 +5,13 @@ from torch.distributions import Categorical, Normal
 
 
 class mdn(nn.Module):
-    def __init__(self, input_size, output_size, num_gaussian, num_hidden):
+    def __init__(self, input_size, output_size, num_gaussian, num_hidden, mode='normal'):
         super(mdn, self).__init__()
         self.i_s = input_size
         self.o_s = output_size
         self.n_g = num_gaussian
         self.n_h = num_hidden
+        self.mode = mode
 
         self.root_layer = nn.Sequential(
             # nn.BatchNorm1d(self.i_s),
@@ -45,7 +46,7 @@ class mdn(nn.Module):
     def forward(self, x, eps=1e-6):
         parameters = self.root_layer(x).double()
 
-        pi = torch.log_softmax(self.pi(parameters), dim=-1)
+        pi = torch.log_softmax(self.pi(parameters), dim=-1) if self.mode == 'normal' else self.pi(parameters)
 
         mu = self.mu(parameters)
 

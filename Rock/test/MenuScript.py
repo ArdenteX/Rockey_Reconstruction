@@ -8,7 +8,7 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import TensorDataset, DataLoader
 from Rock.Model.MDN import mdn, NLLLoss
 from sklearn.metrics import r2_score
-from Rock.Model.MDN_by_Pytorch import mdn as mdn_advance, Mixture
+from Rock.Model.MDN_by_Pytorch import mdn as mdn_advance, Mixture, NLLLoss, NLLLoss_Version_2
 from Rock.Train.TrainLoopOrigin import mdnTraining
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -117,15 +117,28 @@ train_loader = DataLoader(t_set, batch_size=256, shuffle=True, num_workers=8)
 # len(train_loader.sampler)
 
 model = mdn_advance(3, 4, 3, 256)
-model.to('cuda')
-train_x = train_x.to('cuda')
+# model.to('cuda')
+# train_x = train_x.to('cuda')
 
 pi, mu, sigma = model(train_x[:64])
-y_ture = train_y[:64]
-y_ture = y_ture.to('cuda')
-mix = Mixture()
 
-pdf = mix(pi, mu, sigma)
+criterion_straight = NLLLoss()
+criterion_sampling = NLLLoss_Version_2()
+
+for i in range(0, 64 * 5, 64):
+    pi, mu, sigma = model(train_x[i: i + 64])
+    y_ture = train_y[i: i + 64]
+    # y_ture = y_ture.to('cuda')
+    mix = Mixture()
+
+    pdf = mix(pi, mu, sigma)
+
+    loss_1 = criterion_straight(pi, mu, sigma, y_ture)
+    loss_2 = criterion_sampling(pdf, y_ture)
+
+    print("Loss Calculated Straightly: {}, Loss Calculated by Sampling: {}".format(loss_1, loss_2))
+
+
 
 y_pred = pdf.sample()
 
@@ -451,5 +464,49 @@ x = np.linspace(0, 10, 100)
 for i in range(100):
     y = np.sin(x - i)  # 模拟新的数据
     update_plot(x, y)  # 更新图表
+
+import torch.nn as nn
+
+# 声明model对象，此时input size为3
+model = mdn_advance(3, 4, 3, 256)
+
+# 声明一个input size为2的Linear对象
+linear_2 = nn.Linear(in_features=2, out_features=256, bias=True)
+
+# 在root_layer中替换
+model.root_layer[0] = linear_2
+
+for name, parameters in model.named_parameters():
+    print(name, ':', parameters.size())
+
+w_list = [1, 2, 3, 4, 5, 6, 7]
+window = []
+stride = 2
+windows_size = 3
+
+for i in range(0, len(w_list) - windows_size + stride, stride):
+    curr_size = len(w_list) - i
+    if curr_size < windows_size:
+        tmp = np.array(w_list[i: i + curr_size])
+
+    else:
+        tmp = np.array(w_list[i: i + windows_size])
+
+    mu = np.mean(tmp)
+    sig = np.std(tmp)
+    z_score = np.abs((tmp - mu) / sig)
+
+    print(z_score)
+
+    window.append(tmp)
+
+w_test = np.array([])
+
+i = 2
+g = [2, 4]
+h = [5]
+
+type(np.array(g)[0].item())
+
 
 
