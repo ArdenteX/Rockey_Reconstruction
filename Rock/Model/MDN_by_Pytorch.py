@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch
 import numpy as np
 from torch.distributions import Categorical, Normal
+from .SelfAttention import SelfAttention
 
 
 class mdn(nn.Module):
@@ -12,6 +13,9 @@ class mdn(nn.Module):
         self.n_g = num_gaussian
         self.n_h = num_hidden
         self.mode = mode
+        
+        if self.mode == 'normal':
+            self.attn = SelfAttention(self.n_h, self.n_g, self.mode).double()
 
         self.root_layer = nn.Sequential(
             # nn.BatchNorm1d(self.i_s),
@@ -28,7 +32,7 @@ class mdn(nn.Module):
         self.pi = nn.Sequential(
             nn.Linear(self.n_h, self.n_h),
             nn.SiLU(),
-            nn.Linear(self.n_h, self.n_g)
+            nn.Linear(self.n_h, self.n_h if mode=="normal" else self.n_g)
         ).double()
 
         self.mu = nn.Sequential(
@@ -46,9 +50,13 @@ class mdn(nn.Module):
     def forward(self, x, eps=1e-6):
         parameters = self.root_layer(x).double()
 
-        pi = torch.log_softmax(self.pi(parameters), dim=-1) if self.mode == 'normal' else self.pi(parameters)
-
+        pi = self.pi(parameters)
+        
+        if self.mode == 'normal':
+            pi, _ = self.attn(pi)
+            
         mu = self.mu(parameters)
+        pi = torch.log_softmax(pi, dim=-1)
 
         sigma = self.sigma(parameters)
         sigma = torch.exp(sigma + eps)
@@ -120,9 +128,3 @@ class RelativeError(nn.Module):
         relative_error = np.divide((np.abs(samples - y_ture)), np.abs(y_ture + eps)).mean()
 
         return relative_error
-
-
-
-
-
-

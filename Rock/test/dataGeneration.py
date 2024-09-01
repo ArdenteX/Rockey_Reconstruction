@@ -43,13 +43,13 @@ output_parameters = [
 
 model_posterior_distribution = EnsembleMDN(int(len(input_parameters) / 2), len(output_parameters), 10, 256, kernel_size=2)
 init_weights(model_posterior_distribution)
-model = nn.DataParallel(model_posterior_distribution)
-model.load_state_dict(torch.load("D:\\Resource\\MDN\\rockyExoplanetV3\\NoiseADD\\best_model.pth"))
+model_posterior_distribution = nn.DataParallel(model_posterior_distribution)
+model_posterior_distribution.load_state_dict(torch.load("D:\\Resource\\MDN\\rockyExoplanetV3\\NoiseADD\\best_model.pth"))
 
 model_cov = MLP_Attention(input_size=len(input_parameters[:4]), output_size=len(output_parameters), layer1_size=256, layer2_size=128, mode='cov')
 init_weights(model_cov)
-model = nn.DataParallel(model_cov)
-model.load_state_dict(torch.load("D:\\Resource\\MDN\\MLPSelfAttention\\Test\\best_model.pth"))
+model_cov = nn.DataParallel(model_cov)
+model_cov.load_state_dict(torch.load("D:\\Resource\\MDN\\MLPSelfAttention\\Test\\best_model.pth"))
 
 t_x = np.load("D:\\Resource\\MDN\\rockyExoplanetV3\\NoiseADD\\testData\\test_x.npy")
 t_y = np.load("D:\\Resource\\MDN\\rockyExoplanetV3\\NoiseADD\\testData\\test_y.npy")
@@ -70,7 +70,10 @@ model_posterior_distribution.eval()
 p_distribution = model_posterior_distribution(t_x_sub_ori.to('cuda'), t_x_sub_noise.to('cuda'))
 cov_matrix = model_cov(t_x_sub_noise.to('cuda'))
 
-pdf = mixture(p_distribution[0], p_distribution[1], p_distribution[2])
+exp_test = torch.exp(p_distribution[0])
+torch.sum(p_distribution[0])
+
+pdf = mixture(torch.exp(p_distribution[0]), p_distribution[1], p_distribution[2])
 
 y_range = torch.linspace(-2, 2, 20000).reshape(-1, 1)
 
